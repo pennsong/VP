@@ -16,11 +16,12 @@
 			import mx.collections.ArrayCollection;
 			import mx.collections.ArrayList;
 			import mx.controls.Alert;
+			import mx.core.FlexGlobals;
+			import mx.events.CloseEvent;
 			import mx.events.CollectionEvent;
 			import mx.formatters.DateFormatter;
 			import mx.utils.ArrayUtil;
 			import mx.utils.ObjectProxy;
-			import mx.core.FlexGlobals;
 			
 			import spark.events.GridEvent;
 			import spark.events.GridSelectionEvent;
@@ -93,6 +94,10 @@
 			[Bindable]
 			private var userId:String;
 			private var userRole:String;
+			[Bindable]
+			private var userName:String;
+			
+			private var callUser:String;
 			// signaling
 			/**
 			 * Simple request-reply protocol.
@@ -123,7 +128,7 @@
 			// called when application is loaded            		
 			private function init():void
 			{		
-				un.text = "v9";
+				un.text = "v14";
 				userListService.url = WebServiceUrl;
 				//get user list
 				mConnectionTimer = new Timer(1000*5);
@@ -136,7 +141,6 @@
 				localSO = SharedObject.getLocal("videoPhoneSettings");
 				if (localSO.data.hasOwnProperty("user"))
 				{
-					userNameInput.text = localSO.data.user;
 				}
 				
 				var mics:Array = Microphone.names;
@@ -219,6 +223,7 @@
 					
 					cameraChanged();
 				}
+				onConnect();
 			}
 			
 			private function status(msg:String):void
@@ -236,6 +241,7 @@
 				userId = FlexGlobals.topLevelApplication.parameters.userId;
 //				userRole = userRoleInput.text;
 				userRole = FlexGlobals.topLevelApplication.parameters.userRole;
+				userName = FlexGlobals.topLevelApplication.parameters.userName;
 				statusArea.text = "";
 				
 				localSO.data.user = userId;
@@ -1011,12 +1017,19 @@
 			
 			protected function ul_selectionChangeHandler(event:GridSelectionEvent):void
 			{
+				callUser = userList.getItemAt(event.selectionChange.rowIndex)['identity'];
+				Alert.show('确实要开始新的视频通话么？', '提醒', 3, this, method2);
 				// TODO Auto-generated method stub
-				var callUser:String = userList.getItemAt(event.selectionChange.rowIndex)['identity'];
-				status("select " + callUser + "\n");
-				onHangup();
-				calleeInput.text = callUser;
-				onCall();
+			}
+			
+			public function method2(event:CloseEvent):void{
+				if(event.detail == Alert.YES)
+				{
+					status("select " + callUser + "\n");
+					onHangup();
+					calleeInput.text = callUser;
+					onCall();
+				}
 			}
 			
 		]]>
@@ -1060,11 +1073,7 @@
 		</s:layout>
 		<!-- Login pane -->
 		<s:HGroup includeIn="LoginNotConnected" verticalAlign="middle">
-			<s:Label id="un" color="0xffffff" text="User Name: "/>
-			<s:TextInput id="userNameInput" width="80" enter="onConnect()"/>
-			<s:TextInput id="userRoleInput" width="80"/>			
-			<s:Button label="CONNECT" click="onConnect()"
-					  enabled="{userNameInput.text.length &gt; 0}" styleName="buttonStyle"/>
+			<s:Label id="un" color="0xffffff"/>
 		</s:HGroup>
 		<s:HGroup includeIn="LoginConnecting" verticalAlign="middle">
 			<s:Label color="0xffffff" text="Connecting to {connectUrl}"/>
@@ -1072,8 +1081,7 @@
 		</s:HGroup>
 		<s:HGroup includeIn="LoginConnected, CallReady, CallCalling, CallRinging, CallEstablished, CallFailed"
 				  verticalAlign="middle">
-			<s:Label color="0xffffff" text="Connected as {userId}"/>
-			<s:Button label="DISCONNECT" click="onDisconnect()" styleName="buttonStyle"/>
+			<s:Label color="0xffffff" text="Connected as {userName}"/>
 		</s:HGroup>
 		<s:HGroup includeIn="LoginDisconnecting">
 			<s:Label color="0xffffff" text="Disconnecting from {connectUrl}"/>
@@ -1083,10 +1091,8 @@
 		<s:Label includeIn="LoginNotConnected, LoginConnecting, LoginDisconnecting" height="22"
 				 color="0xffffff" text="Please enter user name and connect"/>
 		
-		<s:HGroup includeIn="CallReady" verticalAlign="middle">
-			<s:TextInput id="calleeInput" enter="onCall()"/>
-			<s:Button label="CALL" click="onCall()" enabled="{calleeInput.text.length &gt; 0}"
-					  styleName="buttonStyle"/>
+		<s:HGroup verticalAlign="middle">
+			<s:TextInput id="calleeInput" visible="false"/>
 		</s:HGroup>
 		
 		<s:HGroup includeIn="CallCalling" verticalAlign="middle">
@@ -1121,9 +1127,9 @@
 							 selectionChange="ul_selectionChangeHandler(event)">
 					<s:columns>
 						<s:ArrayList>
-							<s:GridColumn dataField="userId"/>
+							<s:GridColumn dataField="userId" sortDescending="true"/>
 							<s:GridColumn dataField="userName"/>
-							<s:GridColumn dataField="identity"/>
+							<s:GridColumn dataField="identity" visible="false"/>
 						</s:ArrayList>
 					</s:columns>					
 				</s:DataGrid>

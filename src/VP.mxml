@@ -123,7 +123,7 @@
 			// called when application is loaded            		
 			private function init():void
 			{		
-				un.text = "v8";
+				un.text = "v9";
 				userListService.url = WebServiceUrl;
 				//get user list
 				mConnectionTimer = new Timer(1000*5);

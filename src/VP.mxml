@@ -32,7 +32,7 @@
 			private const DeveloperKey:String = "4cd930a206f39d7d7566149d-396053390564";
 			
 			// please insert your web service URL here for exchanging peer ID
-			private const WebServiceUrl:String = "http://www.localshiyishi.cn/reg/index.do";
+			private const WebServiceUrl:String = "http://www.shiyishi.cn/reg/index.do";
 			
 			// this is the connection to rtmfp server
 			private var netConnection:NetConnection;	

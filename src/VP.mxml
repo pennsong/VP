@@ -26,8 +26,8 @@
 			import spark.events.GridEvent;
 			import spark.events.GridSelectionEvent;
 			// rtmfp server address (Adobe Cirrus or FMS)
-			[Bindable] private var connectUrl:String = "rtmfp://p2p.rtmfp.net";
-			
+			//[Bindable] private var connectUrl:String = "rtmfp://p2p.rtmfp.net";
+			[Bindable] private var connectUrl:String = "rtmfp://www.channelwin.info/cr";			
 			// developer key, please insert your developer key here
 			private const DeveloperKey:String = "4cd930a206f39d7d7566149d-396053390564";
 			
@@ -128,7 +128,7 @@
 			// called when application is loaded            		
 			private function init():void
 			{		
-				un.text = "v15";
+				un.text = "v16";
 				userListService.url = WebServiceUrl;
 				//get user list
 				mConnectionTimer = new Timer(1000*5);
@@ -239,9 +239,12 @@
 				trace("connect begin");
 //				userId = userNameInput.text;
 				userId = FlexGlobals.topLevelApplication.parameters.userId;
-//				userRole = userRoleInput.text;
+				//userId = '4';
+				//userRole = userRoleInput.text;
 				userRole = FlexGlobals.topLevelApplication.parameters.userRole;
+				//userRole = 'company';
 				userName = FlexGlobals.topLevelApplication.parameters.userName;
+				//userName = 'ct';
 				statusArea.text = "";
 				
 				localSO.data.user = userId;

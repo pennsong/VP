@@ -7,11 +7,14 @@
 		<!-- Place non-visual elements (e.g., services, value objects) here -->
 		<s:HTTPService id="userListService"
 					   result="getUserList()"/>
+		<s:HTTPService id="userResume"
+					   resultFormat="text"
+					   result="getUserResume(event)"/>
 	</fx:Declarations>
 	<fx:Script>
 		<![CDATA[
 			import flash.events.SampleDataEvent;
-			
+			import mx.rpc.events.ResultEvent;
 			import mx.charts.chartClasses.StackedSeries;
 			import mx.collections.ArrayCollection;
 			import mx.collections.ArrayList;
@@ -32,7 +35,8 @@
 			private const DeveloperKey:String = "4cd930a206f39d7d7566149d-396053390564";
 			
 			// please insert your web service URL here for exchanging peer ID
-			private const WebServiceUrl:String = "http://www.shiyishi.cn/reg/index.do";
+			private const WebServiceUrl:String = "http://www.localshiyishi.cn/reg/index.do";
+			private const userResumeUrl:String = "http://www.localshiyishi.cn/enterp/resume/viewSwf.html?uid=";
 			
 			// this is the connection to rtmfp server
 			private var netConnection:NetConnection;	
@@ -128,7 +132,7 @@
 			// called when application is loaded            		
 			private function init():void
 			{		
-				un.text = "v16";
+				un.text = "v17";
 				userListService.url = WebServiceUrl;
 				//get user list
 				mConnectionTimer = new Timer(1000*5);
@@ -244,7 +248,7 @@
 				userRole = FlexGlobals.topLevelApplication.parameters.userRole;
 				//userRole = 'company';
 				userName = FlexGlobals.topLevelApplication.parameters.userName;
-				//userName = 'ct';
+				//userName = 'songcompany';
 				statusArea.text = "";
 				
 				localSO.data.user = userId;
@@ -307,6 +311,10 @@
 					else if (Reject == action)
 					{
 						currentState = CallReady;
+						if (userRole=='talent')
+						{
+							waiting.text="面试官正忙，请耐心等待";
+						}
 						
 						onHangup();
 					}
@@ -325,6 +333,10 @@
 						netConnection.call(Relay, null, id, Ok, userId);
 						
 						currentState = CallReady;
+						if (userRole=='talent')
+						{
+							waiting.text="面试官正忙，请耐心等待";
+						}
 						
 						onHangup();
 					}
@@ -333,6 +345,10 @@
 						netConnection.call(Relay, null, id, Ok, userId);
 						
 						currentState = CallReady;
+						if (userRole=='talent')
+						{
+							waiting.text="面试官正忙，请耐心等待";
+						}
 						
 						onHangup();
 					}
@@ -488,7 +504,11 @@
 							return;
 					}	
 					
-					currentState = CallReady;	
+					currentState = CallReady;
+					if (userRole=='talent')
+					{
+						waiting.text="面试官正忙，请耐心等待";
+					}
 				}
 				else if (e.type == "lookupSuccess")
 				{
@@ -719,6 +739,10 @@
 				
 				calleeInput.text = "";
 				currentState = CallReady;
+				if (userRole=='talent')
+				{
+					waiting.text="面试官正忙，请耐心等待";
+				}
 				
 				if (incomingStream)
 				{
@@ -1002,6 +1026,10 @@
 					}
 				}
 			}
+			private function getUserResume(event:ResultEvent):void
+			{
+				resume.text = event.result.toString();
+			}
 			
 			private function reflashUserList(e:TimerEvent):void
 			{
@@ -1020,9 +1048,15 @@
 			
 			protected function ul_selectionChangeHandler(event:GridSelectionEvent):void
 			{
-				callUser = userList.getItemAt(event.selectionChange.rowIndex)['identity'];
-				Alert.show('确实要开始新的视频通话么？', '提醒', 3, this, method2);
-				// TODO Auto-generated method stub
+				if (userRole == 'company')
+				{
+					callUser = userList.getItemAt(event.selectionChange.rowIndex)['identity'];
+					userResume.url = userResumeUrl+userList.getItemAt(event.selectionChange.rowIndex)['userId'];
+					status(userResume.url);
+					userResume.send();
+					Alert.show('确实要开始新的视频通话么？', '提醒', 3, this, method2);
+					// TODO Auto-generated method stub
+				}
 			}
 			
 			public function method2(event:CloseEvent):void{
@@ -1085,6 +1119,10 @@
 		<s:HGroup includeIn="LoginConnected, CallReady, CallCalling, CallRinging, CallEstablished, CallFailed"
 				  verticalAlign="middle">
 			<s:Label color="0xffffff" text="连接成功用户名为:{userName}"/>
+		</s:HGroup>
+		<s:HGroup includeIn="CallReady"
+				  verticalAlign="middle">
+			<s:Label color="0xffffff" id="waiting" text=""/>
 		</s:HGroup>
 		<s:HGroup includeIn="LoginDisconnecting">
 			<s:Label color="0xffffff" text="从{connectUrl}挂断"/>
@@ -1195,6 +1233,13 @@
 							verticalScrollPolicy="auto"/>
 				<s:Button label="CLEAR" click="statusArea.text=''" styleName="buttonStyle"
 						  label.LoginNotConnected="清除"/>
+			</s:NavigatorContent>
+			<s:NavigatorContent label="简历" color="0xffffff">
+				<s:layout>
+					<s:VerticalLayout/>
+				</s:layout>
+				<s:TextArea id="resume" width="507" height="120" color="black" editable="false"
+							verticalScrollPolicy="auto"/>
 			</s:NavigatorContent>
 			
 			<s:NavigatorContent label="设备" color="0xffffff"
@@ -1325,5 +1370,6 @@
 				</s:Scroller>
 			</s:NavigatorContent>
 		</mx:ViewStack>
+		<s:Label includeIn="CallReady" color="0xffffff" text="连接成功用户名为:{userName}"/>
 	</s:BorderContainer>
 </s:Application>

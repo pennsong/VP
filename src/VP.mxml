@@ -2,14 +2,11 @@
 <s:Application xmlns:fx="http://ns.adobe.com/mxml/2009"
 			   xmlns:s="library://ns.adobe.com/flex/spark"
 			   xmlns:mx="library://ns.adobe.com/flex/mx"
-			   width="520" height="630" backgroundColor="0xffffff" creationComplete="init()">
+			   width="646" height="638" backgroundColor="0xffffff" creationComplete="init()">
 	<fx:Declarations>
 		<!-- Place non-visual elements (e.g., services, value objects) here -->
-		<s:HTTPService id="userListService"
-					   result="getUserList()"/>
-		<s:HTTPService id="userResume"
-					   resultFormat="text"
-					   result="getUserResume(event)"/>
+		<s:HTTPService id="userListService" result="getUserList()"/>
+		<s:HTTPService id="userResume" result="getUserResume(event)" resultFormat="text"/>
 	</fx:Declarations>
 	<fx:Script>
 		<![CDATA[
@@ -37,6 +34,8 @@
 			// please insert your web service URL here for exchanging peer ID
 			private const WebServiceUrl:String = "http://www.shiyishi.cn/reg/index.do";
 			private const userResumeUrl:String = "http://www.shiyishi.cn/enterp/resume/viewSwf.html?uid=";
+			//private const WebServiceUrl:String = "http://www.localshiyishi.cn/reg/index.do";
+			//private const userResumeUrl:String = "http://www.localshiyishi.cn/enterp/resume/viewSwf.html?uid=";
 			
 			// this is the connection to rtmfp server
 			private var netConnection:NetConnection;	
@@ -243,7 +242,7 @@
 				trace("connect begin");
 //				userId = userNameInput.text;
 				userId = FlexGlobals.topLevelApplication.parameters.userId;
-				//userId = '4';
+				//userId = '38';
 				//userRole = userRoleInput.text;
 				userRole = FlexGlobals.topLevelApplication.parameters.userRole;
 				//userRole = 'company';
@@ -305,7 +304,7 @@
 						else
 						{
 							status("Call rejected due to state: " + currentState + "\n");
-							netConnection.call(Relay, null, id, Reject, userId);
+							netConnection.call(Relay, null, id, Reject, userName);
 						}
 					}
 					else if (Reject == action)
@@ -330,7 +329,7 @@
 					}
 					else if (Bye == action)
 					{
-						netConnection.call(Relay, null, id, Ok, userId);
+						netConnection.call(Relay, null, id, Ok, userName);
 						
 						currentState = CallReady;
 						if (userRole=='talent')
@@ -342,7 +341,7 @@
 					}
 					else if (Cancel == action)
 					{
-						netConnection.call(Relay, null, id, Ok, userId);
+						netConnection.call(Relay, null, id, Ok, userName);
 						
 						currentState = CallReady;
 						if (userRole=='talent')
@@ -437,7 +436,7 @@
 					return;
 				}
 				
-				netConnection.call(Relay, null, identity, Invite, userId);
+				netConnection.call(Relay, null, identity, Invite, userName);
 				
 				// caller publishes media stream
 				outgoingStream = new NetStream(netConnection, NetStream.DIRECT_CONNECTIONS);
@@ -555,7 +554,7 @@
 				}
 				outgoingStream.client = o;
 				
-				netConnection.call(Relay, null, remoteId, Accept, userId);
+				netConnection.call(Relay, null, remoteId, Accept, userName);
 				
 				startVideo();
 				startAudio();
@@ -724,15 +723,15 @@
 				// signaling based on state
 				if (CallEstablished == currentState)
 				{
-					netConnection.call(Relay, null, remoteId, Bye, userId);
+					netConnection.call(Relay, null, remoteId, Bye, userName);
 				}
 				else if (CallCalling == currentState)
 				{
-					netConnection.call(Relay, null, remoteId, Cancel, userId);	
+					netConnection.call(Relay, null, remoteId, Cancel, userName);	
 				}
 				else if (CallRinging == currentState)
 				{
-					netConnection.call(Relay, null, remoteId, Reject, userId);	
+					netConnection.call(Relay, null, remoteId, Reject, userName);	
 				}
 				
 				stopRing();
@@ -822,8 +821,8 @@
 				var msg:String = textInput.text; 
 				if (msg.length != 0 && outgoingStream)
 				{
-					textOutput.text += userId + ": " + msg + "\n";
-					outgoingStream.send("onIm", userId, msg);
+					textOutput.text += userName + ": " + msg + "\n";
+					outgoingStream.send("onIm", userName, msg);
 					textInput.text = "";
 				}
 			}
@@ -1101,7 +1100,7 @@
 	
 	<fx:Declarations>
 		<s:RadioButtonGroup id="codecGroup" change="handleCodecChange()"/>
-		<mx:ArrayCollection id="userList" />
+		<mx:ArrayCollection id="userList"/>
 	</fx:Declarations>
 	
 	<s:BorderContainer backgroundColor="0x303030" borderStyle="solid" cornerRadius="10">
@@ -1120,9 +1119,8 @@
 				  verticalAlign="middle">
 			<s:Label color="0xffffff" text="连接成功用户名为:{userName}"/>
 		</s:HGroup>
-		<s:HGroup includeIn="CallReady"
-				  verticalAlign="middle">
-			<s:Label color="0xffffff" id="waiting" text=""/>
+		<s:HGroup includeIn="CallReady" verticalAlign="middle">
+			<s:Label id="waiting" color="0xffffff" text=""/>
 		</s:HGroup>
 		<s:HGroup includeIn="LoginDisconnecting">
 			<s:Label color="0xffffff" text="从{connectUrl}挂断"/>
@@ -1157,20 +1155,20 @@
 			<s:Label color="0xffffff" text="对{calleeInput.text}的呼叫失败"/>
 			<s:Button label="HANGUP" click="onHangup()" styleName="buttonStyle"/>
 		</s:HGroup>
-		
+		<s:HGroup>
+		<s:VGroup>
+			
+
 		<s:HGroup>
 			<s:VGroup width="182" height="235">
 				<mx:VideoDisplay id="remoteVideoDisplay" width="180" height="135"/>
-				<s:DataGrid id="ul"
-							 dataProvider="{userList}"
-							 width="100%"
-							 height="100%"
-							 selectionChange="ul_selectionChangeHandler(event)">
+				<s:DataGrid id="ul" width="100%" height="100%" dataProvider="{userList}"
+							selectionChange="ul_selectionChangeHandler(event)">
 					<s:columns>
 						<s:ArrayList>
-							<s:GridColumn headerText="id" dataField="userId" sortDescending="true"/>
-							<s:GridColumn headerText="用户名" dataField="userName"/>
-							<s:GridColumn dataField="identity" visible="false"/>
+							<s:GridColumn dataField="userId" headerText="id" sortDescending="true"/>
+							<s:GridColumn dataField="userName" headerText="用户"/>
+							<s:GridColumn visible="false" dataField="identity"/>
 						</s:ArrayList>
 					</s:columns>					
 				</s:DataGrid>
@@ -1211,36 +1209,30 @@
 			</s:VGroup>
 		</s:HGroup>
 		
-		<s:TextArea id="textOutput" width="509" height="100" editable="false"
+		<s:TextArea id="textOutput" width="369" height="100" editable="false"
 					verticalScrollPolicy="auto"/>
 		
 		<s:HGroup>
-			<s:TextInput id="textInput" width="432" enter="onSend()"/>
+			<s:TextInput id="textInput" width="293" enter="onSend()"/>
 			<s:Button label="发送" click="onSend()"
 					  enabled="{textInput.text.length &gt; 0 &amp;&amp; currentState == CallEstablished}"
 					  styleName="buttonStyle"
 					  label.LoginNotConnected="发送"/>
 		</s:HGroup>
 		
-		<s:TabBar width="509" dataProvider="{optionsStack}" styleName="buttonStyle"/>
+		<s:TabBar width="369" dataProvider="{optionsStack}" styleName="buttonStyle"/>
 		<mx:ViewStack id="optionsStack" borderStyle="solid" creationPolicy="all">
 			
 			<s:NavigatorContent label="通话状态" color="0xffffff">
 				<s:layout>
 					<s:VerticalLayout/>
 				</s:layout>
-				<s:TextArea id="statusArea" width="507" height="120" color="black" editable="false"
+				<s:TextArea id="statusArea" width="369" height="120" color="black" editable="false"
 							verticalScrollPolicy="auto"/>
 				<s:Button label="CLEAR" click="statusArea.text=''" styleName="buttonStyle"
 						  label.LoginNotConnected="清除"/>
 			</s:NavigatorContent>
-			<s:NavigatorContent label="简历" color="0xffffff">
-				<s:layout>
-					<s:VerticalLayout/>
-				</s:layout>
-				<s:TextArea id="resume" width="507" height="120" color="black" editable="false"
-							verticalScrollPolicy="auto"/>
-			</s:NavigatorContent>
+			
 			
 			<s:NavigatorContent label="设备" color="0xffffff"
 								enabled="{currentState != LoginNotConnected}">
@@ -1261,12 +1253,13 @@
 				</s:HGroup>
 			</s:NavigatorContent>
 			
-			<s:NavigatorContent label="声音/视频" enabled="{currentState != LoginNotConnected}">
+			<s:NavigatorContent label="图像清晰度" enabled="{currentState != LoginNotConnected}">
 				<s:layout>
 					<s:HorizontalLayout/>
 				</s:layout>
 				
-				<s:Panel width="247" height="135" backgroundColor="0xA0A0A0" title="Audio Codec" visible="false">
+				<s:Panel visible="false" width="50" height="135" backgroundColor="0xA0A0A0"
+						 title="Audio Codec">
 					<s:layout>
 						<s:VerticalLayout paddingLeft="8"/>
 					</s:layout>
@@ -1325,13 +1318,14 @@
 					<s:CheckBox id="enhancedCheckbox" label="Acoustic Echo Cancellation"
 								click="handleCodecChange(); startAudio()" selected="true"/>
 				</s:Panel >
-				<s:Panel width="247" height="135" backgroundColor="0xA0A0A0" title="图像质量">
+				<s:Panel width="247" height="135" backgroundColor="0xA0A0A0"
+						 title="弱                                                   强">
 					<s:layout>
 						<s:VerticalLayout paddingLeft="8"/>
 					</s:layout>
-					<s:HSlider id="videoQualitySlider" width="220"
-							   change="videoQualityChanged(event)" maximum="100" minimum="1"
-							   showDataTip="false" value="80"/>
+						<s:HSlider id="videoQualitySlider" width="179"
+								   change="videoQualityChanged(event)" maximum="100" minimum="1"
+								   showDataTip="false" value="80"/>					
 					<s:CheckBox id="sendVideoCheckbox" label="发送视频" click="startVideo()"
 								selected="true"
 								label.LoginNotConnected="发送视频"/>
@@ -1341,7 +1335,7 @@
 			<s:NavigatorContent label="统计" enabled="{currentState != LoginNotConnected}">
 				<s:Scroller width="100%" height="100%">
 					<s:VGroup>
-						<mx:LineChart id="audioRateChart" width="485" height="105" color="0xffffff"
+						<mx:LineChart id="audioRateChart" width="369" height="105" color="0xffffff"
 									  dataProvider="{audioRateDisplay}">
 							<mx:series>
 								<mx:LineSeries displayName="Received Audio Rate [kbps]" yField="Recv"/>
@@ -1350,7 +1344,7 @@
 						</mx:LineChart>
 						<mx:Legend color="0xffffff" dataProvider="{audioRateChart}"
 								   direction="horizontal"/>
-						<mx:LineChart id="videoRateChart" width="485" height="105" color="0xffffff"
+						<mx:LineChart id="videoRateChart" width="369" height="105" color="0xffffff"
 									  dataProvider="{videoRateDisplay}">
 							<mx:series>
 								<mx:LineSeries displayName="Received Video Rate [kbps]" yField="Recv"/>
@@ -1359,7 +1353,7 @@
 						</mx:LineChart>
 						<mx:Legend color="0xffffff" dataProvider="{videoRateChart}"
 								   direction="horizontal"/>
-						<mx:LineChart id="rttChart" width="485" height="105" color="0xffffff"
+						<mx:LineChart id="rttChart" width="369" height="105" color="0xffffff"
 									  dataProvider="{srttDisplay}">
 							<mx:series>
 								<mx:LineSeries displayName="RTT [ms]" yField="Data"/>
@@ -1371,5 +1365,9 @@
 			</s:NavigatorContent>
 		</mx:ViewStack>
 		<s:Label includeIn="CallReady" color="0xffffff" text="连接成功用户名为:{userName}"/>
+		</s:VGroup>
+			<s:TextArea id="resume" width="260" height="372" color="black" editable="false"
+						verticalScrollPolicy="auto"/>
+		</s:HGroup>
 	</s:BorderContainer>
 </s:Application>

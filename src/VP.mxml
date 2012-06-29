@@ -6,12 +6,14 @@
 	<fx:Declarations>
 		<!-- Place non-visual elements (e.g., services, value objects) here -->
 		<s:HTTPService id="userListService" result="getUserList()"/>
+		<s:HTTPService id="inviteCode" result="createInviteCode()"/>
+		<s:HTTPService id="smsService" result="smsSentRes(event)" resultFormat="text"/>
 		<s:HTTPService id="userResume" result="getUserResume(event)" resultFormat="text"/>
 	</fx:Declarations>
 	<fx:Script>
 		<![CDATA[
 			import flash.events.SampleDataEvent;
-			import mx.rpc.events.ResultEvent;
+			
 			import mx.charts.chartClasses.StackedSeries;
 			import mx.collections.ArrayCollection;
 			import mx.collections.ArrayList;
@@ -20,6 +22,7 @@
 			import mx.events.CloseEvent;
 			import mx.events.CollectionEvent;
 			import mx.formatters.DateFormatter;
+			import mx.rpc.events.ResultEvent;
 			import mx.utils.ArrayUtil;
 			import mx.utils.ObjectProxy;
 			
@@ -32,10 +35,12 @@
 			private const DeveloperKey:String = "4cd930a206f39d7d7566149d-396053390564";
 			
 			// please insert your web service URL here for exchanging peer ID
-			private const WebServiceUrl:String = "http://www.shiyishi.cn/reg/index.do";
-			private const userResumeUrl:String = "http://www.shiyishi.cn/enterp/resume/viewSwf.html?uid=";
-			//private const WebServiceUrl:String = "http://www.localshiyishi.cn/reg/index.do";
-			//private const userResumeUrl:String = "http://www.localshiyishi.cn/enterp/resume/viewSwf.html?uid=";
+			//private const smsServiceUrl:String = "http://www.shiyishi.cn/enterp/send_interview/sendInvite.do";
+			//private const WebServiceUrl:String = "http://www.shiyishi.cn/reg/index.do";
+			//private const userResumeUrl:String = "http://www.shiyishi.cn/enterp/resume/viewSwf.html?uid=";
+			private const smsServiceUrl:String = "http://www.localshiyishi.cn/enterp/send_interview/sendInvite.do";
+			private const WebServiceUrl:String = "http://www.localshiyishi.cn/reg/index.do";
+			private const userResumeUrl:String = "http://www.localshiyishi.cn/enterp/resume/viewSwf.html?uid=";
 			
 			// this is the connection to rtmfp server
 			private var netConnection:NetConnection;	
@@ -101,6 +106,7 @@
 			private var userName:String;
 			
 			private var callUser:String;
+			private var myId:String;
 			// signaling
 			/**
 			 * Simple request-reply protocol.
@@ -133,6 +139,8 @@
 			{		
 				un.text = "v17";
 				userListService.url = WebServiceUrl;
+				inviteCode.url = WebServiceUrl;
+				smsService.url = smsServiceUrl;
 				//get user list
 				mConnectionTimer = new Timer(1000*5);
 				mConnectionTimer.addEventListener(TimerEvent.TIMER, reflashUserList);
@@ -326,6 +334,14 @@
 						}
 						
 						currentState = CallEstablished;
+						//create invite code
+						var request:Object = new Object();
+						request.taskType = 'inviteCode';
+						request.hosterId = myId;
+						request.attenderId = id;
+						trace("send invite1");
+						inviteCode.send(request);
+						trace("send invite2");
 					}
 					else if (Bye == action)
 					{
@@ -410,6 +426,7 @@
 			// other clients can use id exchnage service to lookup our peer ID
 			private function connectSuccess():void
 			{
+				myId = netConnection.nearID;
 				status("Connected, my ID: " + netConnection.nearID + "\n");
 				
 				// exchange peer id using web service
@@ -1008,6 +1025,36 @@
 				}
 			}
 			
+			private function sendInvite():void
+			{
+				var request:Object = new Object();
+				request.mobile = mobile.text;
+				request.invite = inviteCodeBox.text;
+				smsService.send(request);
+			}
+			
+			private function createInviteCode():void
+			{
+				trace("invite result1");
+				var tmpInviteCode:* = inviteCode.lastResult.result.inviteCode;
+				trace(tmpInviteCode.toString());
+				if ( tmpInviteCode != null)
+				{
+					trace("invite result2"+tmpInviteCode);
+					inviteCodeBox.visible = true;
+					inviteCodeBox.text = tmpInviteCode;
+					mobile.visible = true;
+					sendInviteButton.visible = true;
+				}	
+				trace("invite result3");
+			}
+			
+			private function smsSentRes(event:ResultEvent):void
+			{
+				sentResult.visible = true;
+				sentResult.text = event.result.toString();
+			}
+			
 			private function getUserList():void
 			{
 				userList.removeAll();
@@ -1133,7 +1180,14 @@
 		<s:HGroup verticalAlign="middle">
 			<s:TextInput id="calleeInput" visible="false"/>
 		</s:HGroup>
-		
+		<s:HGroup verticalAlign="middle">
+			<s:TextInput id="inviteCodeBox" editable="false" visible="false"/>
+			<s:TextInput id="sentResult" editable="false" visible="false"/>	
+		</s:HGroup>	
+		<s:HGroup verticalAlign="middle">
+			<s:TextInput id="mobile" visible="false"/>		
+			<s:Button id="sendInviteButton" label="发送邀请" click="sendInvite()" styleName="buttonStyle" visible="false"/>
+		</s:HGroup>
 		<s:HGroup includeIn="CallCalling" verticalAlign="middle">
 			<s:Label color="0xffffff" text="呼叫{remoteName}"/>
 			<s:Button label="取消" click="onHangup()" styleName="buttonStyle"/>
